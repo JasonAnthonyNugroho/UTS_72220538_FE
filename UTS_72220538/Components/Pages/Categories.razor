@@ -1,0 +1,37 @@
+﻿@page "/categories"
+
+<PageTitle>Categories</PageTitle>
+
+<h1>Page Categories</h1>
+
+@* Daftar kategori *@
+@if (categories != null && categories.Count > 0)
+{
+    <ul>
+        @foreach (var category in categories)
+        {
+            <li>
+                <strong>@category.categoryId: @category.name</strong>: @category.description
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No categories available.</p>
+}
+
+@code {
+    public List<Categories> categories;
+
+    protected override void OnInitialized()
+    {
+        // Inisialisasi data kategori
+        categories = new List<Categories>
+        {
+            new Categories { categoryId = 1, name = "Electronics", description = "Devices and gadgets" },
+            new Categories { categoryId = 2, name = "Books", description = "Various genres of books" },
+            new Categories { categoryId = 3, name = "Clothing", description = "Fashion and apparel" }
+        };
+    }
+}
