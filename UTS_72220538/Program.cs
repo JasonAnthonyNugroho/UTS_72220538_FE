@@ -1,11 +1,12 @@
 using UTS_72220538.Components;
+using UTS_72220538.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddHttpClient<CategoriesService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

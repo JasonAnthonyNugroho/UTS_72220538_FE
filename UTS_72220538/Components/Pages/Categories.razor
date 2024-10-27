@@ -1,37 +1,28 @@
 ﻿@page "/categories"
+@inject CategoriesService CategoriesService
 
-<PageTitle>Categories</PageTitle>
+<h1>Categories</h1>
 
-<h1>Page Categories</h1>
+<button @onclick="LoadCategories">Load Categories</button>
 
-@* Daftar kategori *@
-@if (categories != null && categories.Count > 0)
-{
-    <ul>
-        @foreach (var category in categories)
-        {
-            <li>
-                <strong>@category.categoryId: @category.name</strong>: @category.description
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p>No categories available.</p>
-}
+<ul>
+    @foreach (var category in categories)
+    {
+        <li>@category.Name - @category.Description <button @onclick="() => DeleteCategory(category.CategoryId)">Delete</button></li>
+    }
+</ul>
 
 @code {
-    public List<Categories> categories;
+    private List<Categories> categories = new List<Categories>();
 
-    protected override void OnInitialized()
+    private async Task LoadCategories()
     {
-        // Inisialisasi data kategori
-        categories = new List<Categories>
-        {
-            new Categories { categoryId = 1, name = "Electronics", description = "Devices and gadgets" },
-            new Categories { categoryId = 2, name = "Books", description = "Various genres of books" },
-            new Categories { categoryId = 3, name = "Clothing", description = "Fashion and apparel" }
-        };
+        categories = await CategoriesService.GetCategoriesAsync();
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        await CategoriesService.DeleteCategoryAsync(id);
+        await LoadCategories(); // Refresh the list
     }
 }
