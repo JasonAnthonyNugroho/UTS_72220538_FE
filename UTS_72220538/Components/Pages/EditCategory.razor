@@ -1,0 +1,69 @@
+﻿@page "/edit-category/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+
+<h3>Edit Kategori</h3>
+
+@if (category == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <form @onsubmit="HandleSubmit">
+        <div style="margin-bottom: 8px;">
+            <label>Nama:</label><br />
+            <input type="text" @bind="category.name" required style="width: 100%; padding: 8px;" />
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label>Deskripsi:</label><br />
+            <textarea @bind="category.description" required style="width: 100%; padding: 8px;"></textarea>
+        </div>
+        <button type="submit"
+                style="background-color: green; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 8px;">
+            Simpan
+        </button>
+        <button @onclick="Cancel"
+                style="margin-left: 8px; background-color: gray; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 8px;">
+            Batal
+        </button>
+    </form>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; } // Parameter ID dari URL
+
+    private Categories category;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ambil kategori berdasarkan ID
+        category = await Http.GetFromJsonAsync<Categories>(
+            $"https://actualbackendapp.azurewebsites.net/api/v1/Categories/{Id}");
+    }
+
+    private async Task HandleSubmit()
+    {
+        var response = await Http.PutAsJsonAsync(
+            $"https://actualbackendapp.azurewebsites.net/api/v1/Categories/{Id}", category);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Kembali ke halaman kategori setelah berhasil memperbarui data
+            Navigation.NavigateTo("/categories");
+        }
+        else
+        {
+            Console.WriteLine("Gagal memperbarui kategori");
+        }
+    }
+
+    private void Cancel()
+    {
+        // Batalkan dan kembali ke halaman kategori
+        Navigation.NavigateTo("/categories");
+    }
+}

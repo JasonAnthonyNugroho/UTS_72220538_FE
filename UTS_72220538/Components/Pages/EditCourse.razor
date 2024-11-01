@@ -1,0 +1,98 @@
+﻿@page "/edit-course/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using UTS_72220538.Model
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
+
+<h3>Edit Course</h3>
+
+@if (course == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="course" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div style="margin-bottom: 12px;">
+            <label>Nama Course:</label>
+            <input @bind="course.Name" class="form-control" required />
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <label>Gambar (URL):</label>
+            <input @bind="course.ImageName" class="form-control" required />
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <label>Durasi (Jam):</label>
+            <input type="number" @bind="course.Duration" class="form-control" required />
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <label>Deskripsi:</label>
+            <textarea @bind="course.Description" class="form-control" required></textarea>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <label>Kategori:</label>
+            <select @bind="course.Categories.categoryId" class="form-control" required>
+                <option value="">Pilih Kategori</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.categoryId"
+                            selected="@(category.categoryId == course.Categories.categoryId)">
+                        @category.name
+                    </option>
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        <button type="button" class="btn btn-secondary" @onclick="BackToList" style="margin-left: 8px;">Batal</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Courses course = new Courses(); // Inisialisasi di sini
+    private List<Categories> categories = new List<Categories>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch course data
+        course = await Http.GetFromJsonAsync<Courses>($"https://actualbackendapp.azurewebsites.net/api/Courses/{Id}");
+
+        // Initialize Categories if it's null
+        if (course.Categories == null)
+        {
+            course.Categories = new UTS_72220538.Model.Categories(); // Pastikan ini menggunakan UTS_72220538.Model.Categories
+        }
+
+        // Fetch categories for the dropdown
+        categories = await Http.GetFromJsonAsync<List<Categories>>("https://actualbackendapp.azurewebsites.net/api/v1/Categories");
+    }
+
+    private async Task HandleSubmit()
+    {
+        var response = await Http.PutAsJsonAsync($"https://actualbackendapp.azurewebsites.net/api/Courses/{Id}", course);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/courses");
+        }
+        else
+        {
+            Console.WriteLine("Gagal mengedit course");
+        }
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/courses");
+    }
+}

@@ -1,0 +1,50 @@
+﻿@page "/add-category"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3>Tambah Kategori Baru</h3>
+
+<form @onsubmit="HandleSubmit">
+    <div style="margin-bottom: 8px;">
+        <label>Nama:</label><br />
+        <input type="text" @bind="category.name" required style="width: 100%; padding: 8px;" />
+    </div>
+    <div style="margin-bottom: 8px;">
+        <label>Deskripsi:</label><br />
+        <textarea @bind="category.description" required style="width: 100%; padding: 8px;"></textarea>
+    </div>
+    <button type="submit" 
+            style="background-color: green; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 8px;">
+        Simpan
+    </button>
+    <button @onclick="Cancel" 
+            style="margin-left: 8px; background-color: gray; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 8px;">
+        Batal
+    </button>
+</form>
+
+@code {
+    private Categories category = new Categories();
+
+    private async Task HandleSubmit()
+    {
+        var response = await Http.PostAsJsonAsync("https://actualbackendapp.azurewebsites.net/api/v1/Categories", category);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Kembali ke halaman kategori setelah berhasil menambahkan data
+            Navigation.NavigateTo("/categories");
+        }
+        else
+        {
+            Console.WriteLine("Gagal menambahkan kategori baru");
+        }
+    }
+
+    private void Cancel()
+    {
+        // Batalkan dan kembali ke halaman kategori
+        Navigation.NavigateTo("/categories");
+    }
+}

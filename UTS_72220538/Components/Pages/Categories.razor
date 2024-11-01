@@ -1,28 +1,116 @@
 ﻿@page "/categories"
-@inject CategoriesService CategoriesService
+@inject HttpClient Http
+@using UTS_72220538.Model
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
 
-<h1>Categories</h1>
+<h3>Kategori</h3>
+<PageTitle>Category</PageTitle>
 
-<button @onclick="LoadCategories">Load Categories</button>
+<!-- Input Pencarian dengan Tombol Find -->
+<div style="display: flex; align-items: center; margin-bottom: 16px;">
+    <input type="text" @bind="searchTerm" @onkeydown="HandleKeyDown" placeholder="Cari berdasarkan nama kategori..."
+           style="padding: 8px; border-radius: 6px; flex-grow: 1;" />
+    <button @onclick="FindCategories" style="margin-left: 8px; background-color: blue; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 6px;">
+        Find
+    </button>
+</div>
 
-<ul>
-    @foreach (var category in categories)
-    {
-        <li>@category.Name - @category.Description <button @onclick="() => DeleteCategory(category.CategoryId)">Delete</button></li>
-    }
-</ul>
+<!-- Tombol New -->
+<button @onclick="NewCategory" style="margin-bottom: 16px; background-color: green; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 6px;">
+    New
+</button>
+
+@if (filteredCategories == null)
+{
+    <p>Loading...</p>
+}
+else if (!filteredCategories.Any())
+{
+    <p>Tidak ada kategori yang ditemukan.</p>
+}
+else
+{
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">ID</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nama</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Deskripsi</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in filteredCategories)
+            {
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@category.categoryId</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@category.name</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@category.description</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        <button @onclick="() => EditCategory(category.categoryId)" style="margin-right: 8px; border-radius: 6px;">Edit</button>
+                        <button @onclick="() => DeleteCategory(category.categoryId)" style="background-color: red; color: white; border-radius: 6px;">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    private List<Categories> categories = new List<Categories>();
+    private List<Categories> categories;
+    private string searchTerm = string.Empty;
+    private List<Categories> filteredCategories;
 
-    private async Task LoadCategories()
+    protected override async Task OnInitializedAsync()
     {
-        categories = await CategoriesService.GetCategoriesAsync();
+        categories = await Http.GetFromJsonAsync<List<Categories>>("https://actualbackendapp.azurewebsites.net/api/v1/Categories");
+        filteredCategories = categories; // Initialize with all categories
+    }
+
+    private void FindCategories()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredCategories = categories; // If no search term, show all categories
+        }
+        else
+        {
+            filteredCategories = categories
+                .Where(c => c.name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList(); // Filter categories by name
+        }
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            FindCategories(); // Call FindCategories method when Enter is pressed
+        }
+    }
+
+    private void EditCategory(int id)
+    {
+        Navigation.NavigateTo($"/edit-category/{id}");
     }
 
     private async Task DeleteCategory(int id)
     {
-        await CategoriesService.DeleteCategoryAsync(id);
-        await LoadCategories(); // Refresh the list
+        var response = await Http.DeleteAsync($"https://actualbackendapp.azurewebsites.net/api/v1/Categories/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            categories = await Http.GetFromJsonAsync<List<Categories>>("https://actualbackendapp.azurewebsites.net/api/v1/Categories");
+            FindCategories(); // Update filtered categories after deletion
+        }
+        else
+        {
+            Console.WriteLine("Gagal menghapus kategori");
+        }
+    }
+
+    private async Task NewCategory()
+    {
+        Navigation.NavigateTo("/add-category");
     }
 }

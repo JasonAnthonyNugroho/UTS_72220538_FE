@@ -1,0 +1,138 @@
+﻿@page "/courses"
+@inject HttpClient Http
+@using UTS_72220538.Model
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3>Daftar Course</h3>
+<PageTitle>Course</PageTitle>
+
+<!-- Input Pencarian dengan Tombol Find -->
+<div style="display: flex; align-items: center; margin-bottom: 16px;">
+    <input type="text" @bind="searchTerm" placeholder="Cari berdasarkan nama course..."
+           @onkeydown="HandleKeyDown" style="padding: 8px; border-radius: 6px; flex-grow: 1;" />
+    <button @onclick="FindCourses" style="margin-left: 8px; background-color: blue; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 6px;">
+        Find
+    </button>
+</div>
+
+<!-- Tombol Tambah Course -->
+<button @onclick="AddCourse"
+        style="margin-bottom: 16px; background-color: green; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 8px;">
+    Tambah Course
+</button>
+
+@if (filteredCourses == null)
+{
+    <p>Loading...</p>
+}
+else if (!filteredCourses.Any())
+{
+    <p>Tidak ada course yang ditemukan.</p>
+}
+else
+{
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        @foreach (var course in filteredCourses)
+        {
+            <div class="course-list">
+                <div class="card course-card">
+                    <img src="@GetImageSource(course.ImageName)" alt="@course.Name" class="card-img-top" />
+                    <div class="card-body">
+                        <h5 class="card-title">@course.Name</h5>
+                        <p class="card-text">@course.Description</p>
+                        <p><strong>Duration:</strong> @course.Duration hours</p>
+                        <span class="badge bg-secondary">@course.Categories?.name</span>
+                        <div class="card-actions">
+                            <button class="btn btn-edit btn-primary" @onclick="@(() => EditCourse(course.CourseId))">Edit</button>
+                            <button class="btn btn-delete btn-danger" @onclick="@(() => DeleteCourse(course.CourseId))">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Courses> courses;
+    private List<Courses> filteredCourses; // Add a filtered list to hold search results
+    private string searchTerm = string.Empty; // Bind search term to this variable
+
+    // Mengambil data courses saat halaman diinisialisasi
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCourses();
+    }
+
+    private async Task LoadCourses()
+    {
+        courses = await Http.GetFromJsonAsync<List<Courses>>("https://actualbackendapp.azurewebsites.net/api/Courses");
+        filteredCourses = courses; // Initialize filtered list with all courses
+    }
+
+    // Fungsi untuk navigasi ke form tambah course
+    private void AddCourse()
+    {
+        Navigation.NavigateTo("/add-course");
+    }
+
+    // Fungsi untuk navigasi ke form edit course
+    private void EditCourse(int id)
+    {
+        Navigation.NavigateTo($"/edit-course/{id}");
+    }
+
+    // Fungsi untuk menghapus course berdasarkan ID
+    private async Task DeleteCourse(int id)
+    {
+        var response = await Http.DeleteAsync($"https://actualbackendapp.azurewebsites.net/api/Courses/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadCourses(); // Refresh data setelah penghapusan
+        }
+        else
+        {
+            Console.WriteLine("Gagal menghapus course.");
+        }
+    }
+
+    // Fungsi untuk mencari course berdasarkan nama
+    private void FindCourses()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredCourses = courses; // If search term is empty, show all courses
+        }
+        else
+        {
+            filteredCourses = courses
+                .Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList(); // Filter courses by name
+        }
+    }
+
+    // Fungsi untuk menangani event keydown
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            FindCourses(); // Call FindCourses method when Enter is pressed
+        }
+    }
+
+    // Fungsi untuk mendapatkan sumber gambar
+    private string GetImageSource(string imageName)
+    {
+        // Correctly define your "unknown image" URL relative to wwwroot
+        const string unknownImageUrl = "/images/unknown.jpg"; // Use the path relative to wwwroot
+
+        // Check if the imageName is not null or empty and if it is a valid URL
+        if (!string.IsNullOrWhiteSpace(imageName) && Uri.IsWellFormedUriString(imageName, UriKind.Absolute))
+        {
+            return imageName; // Return the actual image URL
+        }
+
+        return unknownImageUrl; // Return the unknown image URL
+    }
+}

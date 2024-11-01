@@ -1,5 +1,5 @@
 using UTS_72220538.Components;
-using UTS_72220538.Services;
+using UTS_72220538.Components.Pages;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddHttpClient<CategoriesService>();
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri("https://actualbackendapp.azurewebsites.net/api/v1/Categories") });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

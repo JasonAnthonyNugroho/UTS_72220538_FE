@@ -1,0 +1,120 @@
+﻿@page "/add-course"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using UTS_72220538.Model
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
+
+<h3>Tambah Course Baru</h3>
+
+@if (showNotification)
+{
+    <div class="notification success" style="margin-bottom: 16px;">
+        Course berhasil ditambahkan!
+    </div>
+}
+
+<EditForm Model="course" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div style="margin-bottom: 12px;">
+        <label>Nama Course:</label>
+        <input @bind="course.Name" class="form-control" required />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label>Gambar (URL):</label>
+        <input @bind="course.ImageName" class="form-control" required />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label>Durasi (Jam):</label>
+        <input type="number" @bind="course.Duration" class="form-control" required />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label>Deskripsi:</label>
+        <textarea @bind="course.Description" class="form-control" required></textarea>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label>Kategori:</label>
+        <select @bind="selectedCategoryId" class="form-control" required>
+            <option value="">Pilih Kategori</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.categoryId">@category.name</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Simpan</button>
+    <button @onclick="BackToList" class="btn btn-secondary" style="margin-left: 8px;">Batal</button>
+</EditForm>
+
+@code {
+    private Courses course = new Courses();  // Initialize course model
+    private List<Categories> categories = new List<Categories>();  // List of categories
+    private bool showNotification = false;
+    private int selectedCategoryId;
+
+    // Fetch categories from API during initialization
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categories = await Http.GetFromJsonAsync<List<Categories>>("https://actualbackendapp.azurewebsites.net/api/v1/Categories");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching categories: {ex.Message}");
+        }
+    }
+
+    // Handle form submission
+    private async Task HandleValidSubmit()
+    {
+        Console.WriteLine("Form submitted");
+
+        // Set the selected category to the course
+        course.Categories = new UTS_72220538.Model.Categories { categoryId = selectedCategoryId };
+
+
+        try
+        {
+            var courseData = new
+            {
+                Name = course.Name,
+                ImageName = course.ImageName,
+                Duration = course.Duration,
+                Description = course.Description,
+                CategoryId = selectedCategoryId
+            };
+            var response = await Http.PostAsJsonAsync("https://actualbackendapp.azurewebsites.net/api/Courses", courseData);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+                showNotification = true;
+                await Task.Delay(3000);
+                showNotification = false;
+                Navigation.NavigateTo("/courses");
+            }
+            else
+            {
+                Console.WriteLine($"Gagal menambahkan course. Status Code: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error posting course: {ex.Message}");
+        }
+    }
+
+    // Navigate back to the courses list
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/courses");
+    }
+}

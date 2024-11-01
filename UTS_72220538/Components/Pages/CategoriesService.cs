@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using UTS_72220538.Components.Pages;
 
-namespace UTS_72220538.Services
+
+namespace UTS_72220538.Components.Pages
 {
     public class CategoriesService
     {
@@ -32,7 +33,7 @@ namespace UTS_72220538.Services
 
         public async Task UpdateCategoryAsync(Categories category)
         {
-            await _httpClient.PutAsJsonAsync($"https://actualbackendapp.azurewebsites.net/api/v1/Categories/{category.CategoryId}", category);
+            await _httpClient.PutAsJsonAsync($"https://actualbackendapp.azurewebsites.net/api/v1/Categories/{category.categoryId}", category);
         }
 
         public async Task DeleteCategoryAsync(int id)
